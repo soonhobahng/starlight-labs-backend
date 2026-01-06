@@ -1,0 +1,75 @@
+# app/schemas/fortune.py
+
+from pydantic import BaseModel, Field
+from datetime import date
+from typing import List, Optional
+
+class LuckScores(BaseModel):
+    overall: int = Field(..., ge=1, le=100)
+    wealth: int = Field(..., ge=1, le=100)
+    lottery: int = Field(..., ge=1, le=100)
+
+
+class LuckyElements(BaseModel):
+    numbers: List[int] = Field(..., min_items=7, max_items=7)
+    color: str
+    direction: str
+
+
+class FortuneMessages(BaseModel):
+    fortune: str
+    advice: str
+
+
+class RankInfo(BaseModel):
+    zodiac_rank: int
+    total_zodiacs: int = 12
+    percentile: int
+
+
+class DailyFortuneResponse(BaseModel):
+    user_id: str
+    fortune_date: date
+    zodiac_sign: str
+    birth_year: int
+    
+    luck_scores: LuckScores
+    lucky_elements: LuckyElements
+    messages: FortuneMessages
+    rank_info: RankInfo
+    
+    class Config:
+        orm_mode = True
+
+
+class ZodiacRanking(BaseModel):
+    rank: int
+    zodiac_sign: str
+    avg_luck: float
+    active_users: int
+    message: Optional[str] = None
+
+
+class ZodiacStatsResponse(BaseModel):
+    stats_date: date
+    zodiac_rankings: List[ZodiacRanking]
+    my_zodiac: dict
+
+
+class TrendingResponse(BaseModel):
+    timestamp: str
+    popular_numbers: dict
+    popular_strategy: dict
+    community_stats: dict
+    lucky_zodiacs_today: List[dict]
+
+
+class GenerateWithLuckyRequest(BaseModel):
+    use_lucky_numbers: bool = True
+    strategy: str = "ai_ensemble"
+    count: int = Field(default=5, ge=1, le=10)
+
+
+class UserProfileUpdate(BaseModel):
+    birth_year: int = Field(..., ge=1900, le=2100)
+    fortune_enabled: bool = True

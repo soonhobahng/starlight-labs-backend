@@ -1,0 +1,39 @@
+# Core Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Database
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# Validation & Settings
+pydantic[email]==2.10.3
+pydantic-settings==2.6.1
+python-dotenv==1.0.1
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
+python-multipart==0.0.20
+
+# AI
+anthropic==0.40.0
+
+# Data Science & ML (Railway 최적화 - wheel only)
+--only-binary :all:
+scikit-learn==1.6.0
+pandas==2.2.3
+numpy==2.1.3
+
+# Cache & HTTP
+redis==5.2.0
+httpx==0.28.1
+requests==2.32.3
+
+# Web Scraping
+beautifulsoup4==4.12.3
+
+# Image Upload
+cloudinary

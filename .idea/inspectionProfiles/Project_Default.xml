@@ -1,0 +1,40 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="annotated-types" />
+          <option value="asgiref" />
+          <option value="Django" />
+          <option value="django-cors-headers" />
+          <option value="django-environ" />
+          <option value="django-ninja" />
+          <option value="djangorestframework" />
+          <option value="djangorestframework-simplejwt" />
+          <option value="environ" />
+          <option value="et-xmlfile" />
+          <option value="openpyxl" />
+          <option value="psycopg2-binary" />
+          <option value="pydantic" />
+          <option value="pydantic_core" />
+          <option value="PyJWT" />
+          <option value="python-decouple" />
+          <option value="sqlparse" />
+          <option value="typing_extensions" />
+          <option value="pyrfc" />
+          <option value="pandas" />
+          <option value="icecream" />
+          <option value="django-ninja-jwt" />
+          <option value="requests" />
+          <option value="zeep" />
+          <option value="pycryptodome" />
+          <option value="lxml" />
+          <option value="JPype1" />
+          <option value="suds-py3" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
