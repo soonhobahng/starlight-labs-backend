@@ -140,12 +140,13 @@ class FortuneService:
         """오늘의 운세 조회 또는 생성 (캐싱)"""
         
         try:
-            # 캐시 조회
+            # 캐시 조회 (personal 타입만)
             fortune = db.query(DailyFortune).filter(
                 DailyFortune.user_id == user_id,
-                DailyFortune.fortune_date == fortune_date
+                DailyFortune.fortune_date == fortune_date,
+                DailyFortune.fortune_type.in_(['personal', None])  # 기존 NULL 데이터 호환
             ).first()
-            
+
             if fortune:
                 return fortune
         except Exception as e:
@@ -170,6 +171,7 @@ class FortuneService:
             fortune = DailyFortune(
                 user_id=user_id,
                 fortune_date=fortune_date,
+                fortune_type='personal',
                 overall_luck=scores['overall'],
                 wealth_luck=scores['wealth'],
                 lottery_luck=scores['lottery'],
