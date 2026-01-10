@@ -114,8 +114,8 @@ def setup_logging():
 setup_logging()
 
 app = FastAPI(
-    title="LottoChat AI Backend",
-    description="AI-powered lotto prediction service",
+    title="Starlight Labs Backend",
+    description="Advanced AI-powered analytics platform",
     version="1.0.0"
 )
 
@@ -210,7 +210,7 @@ async def health():
     scheduler_logger = logging.getLogger("app.services.scheduler") 
     scheduler_logger.info("Health check - testing scheduler logger")
     
-    return {"status": "healthy", "message": "LottoChat AI Backend is running"}
+    return {"status": "healthy", "message": "Starlight Labs Backend is running"}
 
 # 로깅 테스트 엔드포인트
 @app.get("/test-logging")
@@ -259,7 +259,7 @@ app.add_event_handler("shutdown", shutdown_event)
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to LottoChat AI Backend",
+        "message": "Welcome to Starlight Labs Backend",
         "version": "1.0.0",
         "docs": "/docs",
         "health": "/health"

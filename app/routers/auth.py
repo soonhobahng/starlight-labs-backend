@@ -296,9 +296,19 @@ async def naver_callback(code: str, state: str, db: Session = Depends(get_db)):
 
 
 @router.get("/google/callback")
-async def google_callback(code: str, db: Session = Depends(get_db)):
+async def google_callback(code: str = None, error: str = None, db: Session = Depends(get_db)):
     """구글 로그인 콜백"""
     try:
+        # OAuth error 처리
+        if error:
+            logger.error(f"구글 OAuth 오류: {error}")
+            return RedirectResponse(f"{settings.FRONTEND_URL}/auth/error?error=oauth_error&message={error}")
+        
+        # code 파라미터 검증
+        if not code:
+            logger.error("구글 OAuth callback에서 code 파라미터 누락")
+            return RedirectResponse(f"{settings.FRONTEND_URL}/auth/error?error=missing_code&message=인증코드가 누락되었습니다")
+        
         # 1. 토큰 발급
         token_data = await OAuthService.get_google_token(code)
         access_token = token_data.get("access_token")

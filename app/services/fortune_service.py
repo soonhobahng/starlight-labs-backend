@@ -9,7 +9,10 @@ from sqlalchemy import func
 
 from app.models.fortune import DailyFortune, FortuneMessage, ZodiacDailyStat
 from app.models.models import User
-from app.core.constants import LUCKY_COLORS, LUCKY_DIRECTIONS, LUCK_RANGE_HIGH, LUCK_RANGE_MEDIUM
+from app.core.constants import (
+    LUCKY_COLORS, LUCKY_DIRECTIONS, LUCK_RANGE_HIGH, LUCK_RANGE_MEDIUM,
+    ZODIAC_LUCKY_COLORS, ZODIAC_LUCKY_DIRECTIONS, ZODIAC_FORTUNE_MESSAGES, ZODIAC_NAMES
+)
 
 class FortuneService:
     """운세 계산 및 관리 서비스"""
@@ -246,3 +249,212 @@ class FortuneService:
         
         # 기본값 반환 (DB 없어도 동작)
         return {"zodiac_rank": 6, "total_zodiacs": 12, "percentile": 50}
+
+    # ========== 띠별 운세 API 관련 메서드 ==========
+
+    @staticmethod
+    def _generate_zodiac_seed(zodiac: str, target_date: date) -> int:
+        """같은 날 같은 띠는 같은 시드값 생성"""
+        seed_string = f"{zodiac}_{target_date.isoformat()}"
+        hash_value = hashlib.md5(seed_string.encode()).hexdigest()
+        return int(hash_value[:8], 16)
+
+    @staticmethod
+    def _generate_zodiac_score(seed: int, category: str) -> int:
+        """카테고리별 점수 생성 (40-100 범위)"""
+        random.seed(seed + hash(category))
+        return random.randint(40, 100)
+
+    @staticmethod
+    def _get_zodiac_message(score: int, category: str, seed: int) -> str:
+        """점수 범위에 맞는 메시지 선택 (상수에서)"""
+        if score >= 80:
+            luck_range = 'high'
+        elif score >= 60:
+            luck_range = 'medium'
+        else:
+            luck_range = 'low'
+
+        messages = ZODIAC_FORTUNE_MESSAGES.get(category, {}).get(luck_range, [])
+        if not messages:
+            return "오늘도 행운을 빕니다."
+
+        # 시드 기반 메시지 선택 (일관성 유지)
+        random.seed(seed + hash(category) + score)
+        return random.choice(messages)
+
+    @staticmethod
+    def _convert_zodiac_sign_to_name(zodiac_sign: str) -> str:
+        """'용띠' -> '용' 변환"""
+        if zodiac_sign and zodiac_sign.endswith('띠'):
+            return zodiac_sign[:-1]
+        return zodiac_sign
+
+    @staticmethod
+    def get_or_create_zodiac_fortune(
+        db: Session,
+        user_id: str,
+        zodiac_sign: str,
+        fortune_date: date
+    ) -> dict:
+        """띠별 오늘의 운세 조회 또는 생성
+
+        Args:
+            db: 데이터베이스 세션
+            user_id: 사용자 ID
+            zodiac_sign: 띠 (예: "용띠")
+            fortune_date: 운세 날짜
+
+        Returns:
+            ZodiacTodayFortuneResponse 형식의 dict
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # 시드 생성 (같은 날 같은 띠는 같은 결과)
+        seed = FortuneService._generate_zodiac_seed(zodiac_sign, fortune_date)
+
+        try:
+            # 캐시 조회 (user_id + fortune_type='zodiac' + fortune_date)
+            fortune = db.query(DailyFortune).filter(
+                DailyFortune.user_id == user_id,
+                DailyFortune.fortune_date == fortune_date,
+                DailyFortune.fortune_type == 'zodiac'
+            ).first()
+
+            if fortune:
+                # 캐시된 데이터 반환
+                return FortuneService._build_zodiac_response(fortune, zodiac_sign, fortune_date)
+        except Exception as e:
+            try:
+                db.rollback()
+            except:
+                pass
+            logger.warning(f"Zodiac fortune query failed: {e}")
+
+        # 새로 생성
+        scores = {
+            'overall': FortuneService._generate_zodiac_score(seed, 'overall'),
+            'wealth': FortuneService._generate_zodiac_score(seed, 'wealth'),
+            'love': FortuneService._generate_zodiac_score(seed, 'love'),
+            'health': FortuneService._generate_zodiac_score(seed, 'health'),
+            'work': FortuneService._generate_zodiac_score(seed, 'work'),
+        }
+
+        # 행운 요소 생성
+        random.seed(seed + hash('color'))
+        lucky_color = random.choice(ZODIAC_LUCKY_COLORS)
+
+        random.seed(seed + hash('number'))
+        lucky_number = random.randint(1, 45)
+
+        random.seed(seed + hash('direction'))
+        lucky_direction = random.choice(ZODIAC_LUCKY_DIRECTIONS)
+
+        # 메시지 생성
+        overall_message = FortuneService._get_zodiac_message(scores['overall'], 'overall', seed)
+        advice_message = FortuneService._get_zodiac_message(scores['overall'], 'advice', seed)
+
+        # 카테고리별 설명
+        wealth_desc = FortuneService._get_zodiac_message(scores['wealth'], 'wealth', seed)
+        love_desc = FortuneService._get_zodiac_message(scores['love'], 'love', seed)
+        health_desc = FortuneService._get_zodiac_message(scores['health'], 'health', seed)
+        work_desc = FortuneService._get_zodiac_message(scores['work'], 'work', seed)
+
+        # 행운의 번호 7개 (기존 필드 호환)
+        random.seed(seed + hash('numbers'))
+        lucky_numbers = sorted(random.sample(range(1, 46), 7))
+
+        try:
+            # DB에 저장
+            fortune = DailyFortune(
+                user_id=user_id,
+                fortune_date=fortune_date,
+                fortune_type='zodiac',
+                overall_luck=scores['overall'],
+                wealth_luck=scores['wealth'],
+                lottery_luck=scores['wealth'],  # 기존 필드 호환
+                love_luck=scores['love'],
+                health_luck=scores['health'],
+                work_luck=scores['work'],
+                lucky_numbers=lucky_numbers,
+                lucky_number=lucky_number,
+                lucky_color=lucky_color,
+                lucky_direction=lucky_direction,
+                fortune_message=overall_message,
+                advice=advice_message,
+                wealth_description=wealth_desc,
+                love_description=love_desc,
+                health_description=health_desc,
+                work_description=work_desc,
+            )
+
+            db.add(fortune)
+            db.commit()
+            db.refresh(fortune)
+
+            return FortuneService._build_zodiac_response(fortune, zodiac_sign, fortune_date)
+
+        except Exception as e:
+            try:
+                db.rollback()
+            except:
+                pass
+            logger.warning(f"Zodiac fortune save failed, returning temp data: {e}")
+
+            # DB 저장 실패 시 임시 응답 반환
+            zodiac_name = FortuneService._convert_zodiac_sign_to_name(zodiac_sign)
+            return {
+                "date": fortune_date,
+                "zodiac": zodiac_name,
+                "overall_score": scores['overall'],
+                "message": overall_message,
+                "categories": {
+                    "wealth": {"score": scores['wealth'], "description": wealth_desc},
+                    "love": {"score": scores['love'], "description": love_desc},
+                    "health": {"score": scores['health'], "description": health_desc},
+                    "work": {"score": scores['work'], "description": work_desc},
+                },
+                "lucky": {
+                    "color": lucky_color,
+                    "number": lucky_number,
+                    "direction": lucky_direction,
+                },
+                "advice": advice_message,
+            }
+
+    @staticmethod
+    def _build_zodiac_response(fortune: DailyFortune, zodiac_sign: str, fortune_date: date) -> dict:
+        """DailyFortune 모델을 ZodiacTodayFortuneResponse 형식으로 변환"""
+        zodiac_name = FortuneService._convert_zodiac_sign_to_name(zodiac_sign)
+
+        return {
+            "date": fortune_date,
+            "zodiac": zodiac_name,
+            "overall_score": fortune.overall_luck,
+            "message": fortune.fortune_message or "오늘도 행운을 빕니다.",
+            "categories": {
+                "wealth": {
+                    "score": fortune.wealth_luck,
+                    "description": fortune.wealth_description or "재물운을 확인해보세요."
+                },
+                "love": {
+                    "score": fortune.love_luck or fortune.wealth_luck,
+                    "description": fortune.love_description or "연애운을 확인해보세요."
+                },
+                "health": {
+                    "score": fortune.health_luck or fortune.overall_luck,
+                    "description": fortune.health_description or "건강운을 확인해보세요."
+                },
+                "work": {
+                    "score": fortune.work_luck or fortune.overall_luck,
+                    "description": fortune.work_description or "직장운을 확인해보세요."
+                },
+            },
+            "lucky": {
+                "color": fortune.lucky_color or "노란색",
+                "number": fortune.lucky_number or 7,
+                "direction": fortune.lucky_direction or "동쪽",
+            },
+            "advice": fortune.advice or "오늘도 좋은 하루 되세요.",
+        }

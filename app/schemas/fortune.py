@@ -73,3 +73,36 @@ class GenerateWithLuckyRequest(BaseModel):
 class UserProfileUpdate(BaseModel):
     birth_year: int = Field(..., ge=1900, le=2100)
     fortune_enabled: bool = True
+
+
+# 띠별 오늘의 운세 API 응답 스키마
+class CategoryScore(BaseModel):
+    """카테고리별 점수 및 설명"""
+    score: int = Field(..., ge=1, le=100)
+    description: str
+
+
+class FortuneCategories(BaseModel):
+    """운세 카테고리 모음"""
+    wealth: CategoryScore
+    love: CategoryScore
+    health: CategoryScore
+    work: CategoryScore
+
+
+class LuckyInfo(BaseModel):
+    """행운 정보"""
+    color: str
+    number: int = Field(..., ge=1, le=45)
+    direction: str
+
+
+class ZodiacTodayFortuneResponse(BaseModel):
+    """띠별 오늘의 운세 응답"""
+    date: date
+    zodiac: str  # "용", "쥐" 등 (띠 없이)
+    overall_score: int = Field(..., ge=1, le=100)
+    message: str
+    categories: FortuneCategories
+    lucky: LuckyInfo
+    advice: str

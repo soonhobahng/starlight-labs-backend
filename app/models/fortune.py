@@ -10,25 +10,36 @@ from app.core.database import Base
 
 class DailyFortune(Base):
     __tablename__ = "daily_fortunes"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     fortune_date = Column(Date, nullable=False)
-    
+    fortune_type = Column(String(20), default='personal')  # 'personal', 'zodiac', 'constellation'
+
     # 운세 점수
     overall_luck = Column(Integer, nullable=False)
     wealth_luck = Column(Integer, nullable=False)
     lottery_luck = Column(Integer, nullable=False)
-    
+    love_luck = Column(Integer, nullable=True)  # 연애운
+    health_luck = Column(Integer, nullable=True)  # 건강운
+    work_luck = Column(Integer, nullable=True)  # 직장운
+
     # 행운 요소
     lucky_numbers = Column(ARRAY(Integer), nullable=False)
+    lucky_number = Column(Integer, nullable=True)  # 행운의 숫자 (단일, 1-45)
     lucky_color = Column(String(20))
     lucky_direction = Column(String(10))
-    
+
     # 메시지
     fortune_message = Column(Text)
     advice = Column(Text)
-    
+
+    # 카테고리별 설명
+    wealth_description = Column(Text, nullable=True)
+    love_description = Column(Text, nullable=True)
+    health_description = Column(Text, nullable=True)
+    work_description = Column(Text, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

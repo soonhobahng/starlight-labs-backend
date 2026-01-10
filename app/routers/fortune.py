@@ -10,10 +10,11 @@ from app.core.security import get_current_user
 from app.models.models import User
 from app.models.fortune import ZodiacDailyStat
 from app.schemas.fortune import (
-    DailyFortuneResponse, 
+    DailyFortuneResponse,
     ZodiacStatsResponse,
     TrendingResponse,
-    GenerateWithLuckyRequest
+    GenerateWithLuckyRequest,
+    ZodiacTodayFortuneResponse
 )
 from app.services.fortune_service import FortuneService
 from app.services.zodiac_service import ZodiacService
@@ -266,3 +267,44 @@ def generate_with_lucky_numbers(
         "lucky_numbers_used": fortune.lucky_numbers,
         "message": "행운의 번호를 기반으로 생성했습니다! 🍀"
     }
+
+
+@router.get("/zodiac/today", response_model=ZodiacTodayFortuneResponse)
+def get_zodiac_today_fortune(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    띠별 오늘의 운세 조회
+
+    - Bearer Token 인증 필요
+    - 로그인한 유저의 zodiac_sign 기준으로 오늘의 운세 반환
+    - zodiac_sign 미설정 시 400 에러
+
+    Returns:
+        ZodiacTodayFortuneResponse: 띠별 오늘의 운세 정보
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    # 1. zodiac_sign 확인
+    if not current_user.zodiac_sign:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="띠 정보가 없습니다. 프로필에서 생년을 설정해주세요."
+        )
+
+    today = date.today()
+
+    # 2. 운세 조회 또는 생성
+    fortune_data = FortuneService.get_or_create_zodiac_fortune(
+        db=db,
+        user_id=str(current_user.id),
+        zodiac_sign=current_user.zodiac_sign,
+        fortune_date=today
+    )
+
+    logger.info(f"Zodiac fortune retrieved for user {current_user.id}, zodiac: {current_user.zodiac_sign}")
+
+    # 3. 응답 반환
+    return ZodiacTodayFortuneResponse(**fortune_data)

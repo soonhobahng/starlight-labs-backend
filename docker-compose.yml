@@ -1,5 +1,5 @@
 # ===========================================
-# LottoChat AI - Backend Infrastructure
+# Starlight Labs - Backend Infrastructure
 # PostgreSQL + Redis
 # ===========================================
 
@@ -11,12 +11,12 @@ services:
   # ===========================================
   postgres:
     image: postgres:15-alpine
-    container_name: lottochat-postgres
+    container_name: starlight-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: lottochatadmin
+      POSTGRES_USER: starlightadmin
       POSTGRES_PASSWORD: fhEhcotdjemals12345
-      POSTGRES_DB: lottochatdb
+      POSTGRES_DB: starlightdb
       PGDATA: /var/lib/postgresql/data/pgdata
       TZ: Asia/Seoul
     ports:
@@ -25,42 +25,42 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d  # 초기화 스크립트 (선택사항)
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d lottochat_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d starlight_db"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - lottochat-network
+      - starlight-network
 
   # ===========================================
   # Redis Cache & Rate Limiting
   # ===========================================
   redis:
     image: redis:7-alpine
-    container_name: lottochat-redis
+    container_name: starlight-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass lottochatredis1234
+    command: redis-server --appendonly yes --requirepass starlightredis1234
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "lottochatredis1234", "ping"]
+      test: ["CMD", "redis-cli", "-a", "starlightredis1234", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - lottochat-network
+      - starlight-network
 
   # ===========================================
   # pgAdmin (선택사항 - DB 관리 UI)
   # ===========================================
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: lottochat-pgadmin
+    container_name: starlight-pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@lottochat.com
+      PGADMIN_DEFAULT_EMAIL: admin@starlight.com
       PGADMIN_DEFAULT_PASSWORD: admin1234
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
@@ -70,7 +70,7 @@ services:
     depends_on:
       - postgres
     networks:
-      - lottochat-network
+      - starlight-network
     profiles:
       - tools  # docker-compose --profile tools up 으로 실행
 
@@ -79,16 +79,16 @@ services:
   # ===========================================
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: lottochat-redis-commander
+    container_name: starlight-redis-commander
     restart: unless-stopped
     environment:
-      REDIS_HOSTS: local:redis:6379:0:lottochatredis1234
+      REDIS_HOSTS: local:redis:6379:0:starlightredis1234
     ports:
       - "8081:8081"
     depends_on:
       - redis
     networks:
-      - lottochat-network
+      - starlight-network
     profiles:
       - tools  # docker-compose --profile tools up 으로 실행
 
@@ -96,7 +96,7 @@ services:
 # Networks
 # ===========================================
 networks:
-  lottochat-network:
+  starlight-network:
     driver: bridge
 
 # ===========================================
