@@ -30,7 +30,7 @@ class RankInfo(BaseModel):
 class DailyFortuneResponse(BaseModel):
     user_id: str
     fortune_date: date
-    zodiac_sign: str
+    zodiac_sign: Optional[str] = None
     birth_year: int
     
     luck_scores: LuckScores
