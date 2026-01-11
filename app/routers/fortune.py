@@ -81,8 +81,11 @@ def get_daily_fortune(
     response = DailyFortuneResponse(
         user_id=str(current_user.id),
         fortune_date=fortune.fortune_date,
-        zodiac_sign=current_user.zodiac_sign,
         birth_year=current_user.birth_year,
+        birth_date=current_user.birth_date,
+        zodiac_sign=current_user.zodiac_sign,
+        constellation=current_user.constellation,
+        mbti=current_user.mbti,
         luck_scores={
             "overall": fortune.overall_luck,
             "wealth": fortune.wealth_luck,

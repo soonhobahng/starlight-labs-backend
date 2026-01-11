@@ -30,14 +30,17 @@ class RankInfo(BaseModel):
 class DailyFortuneResponse(BaseModel):
     user_id: str
     fortune_date: date
-    zodiac_sign: Optional[str] = None
     birth_year: int
-    
+    birth_date: Optional[date] = None
+    zodiac_sign: Optional[str] = None  # 띠 (예: "말띠")
+    constellation: Optional[str] = None  # 별자리 (예: "사자자리")
+    mbti: Optional[str] = None  # MBTI (예: "INTJ")
+
     luck_scores: LuckScores
     lucky_elements: LuckyElements
     messages: FortuneMessages
     rank_info: RankInfo
-    
+
     class Config:
         orm_mode = True
 
