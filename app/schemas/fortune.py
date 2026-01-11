@@ -8,23 +8,63 @@ class LuckScores(BaseModel):
     overall: int = Field(..., ge=1, le=100)
     wealth: int = Field(..., ge=1, le=100)
     lottery: int = Field(..., ge=1, le=100)
+    love: Optional[int] = Field(None, ge=1, le=100)
+    career: Optional[int] = Field(None, ge=1, le=100)
+    health: Optional[int] = Field(None, ge=1, le=100)
+
+
+class CategoryFortune(BaseModel):
+    """카테고리별 운세 상세 정보"""
+    score: int = Field(..., ge=1, le=100)
+    title: str
+    description: str
+
+
+class CategoryFortunes(BaseModel):
+    """모든 카테고리 운세"""
+    wealth: CategoryFortune
+    love: CategoryFortune
+    career: CategoryFortune
+    health: CategoryFortune
+    lottery: CategoryFortune
 
 
 class LuckyElements(BaseModel):
     numbers: List[int] = Field(..., min_items=7, max_items=7)
     color: str
+    color_hex: Optional[str] = None
     direction: str
+    time: Optional[str] = None  # 행운의 시간
+    item: Optional[str] = None  # 행운의 아이템
 
 
 class FortuneMessages(BaseModel):
     fortune: str
     advice: str
+    warning: Optional[str] = None
+    summary: Optional[str] = None
+
+
+class TimeFortune(BaseModel):
+    """시간대별 운세"""
+    period: str
+    score: int = Field(..., ge=1, le=100)
+    message: str
+
+
+class TimeFortunes(BaseModel):
+    """시간대별 운세 모음"""
+    morning: TimeFortune
+    afternoon: TimeFortune
+    evening: TimeFortune
 
 
 class RankInfo(BaseModel):
     zodiac_rank: int
     total_zodiacs: int = 12
     percentile: int
+    best_zodiac: Optional[str] = None
+    best_match: Optional[str] = None
 
 
 class DailyFortuneResponse(BaseModel):
@@ -37,8 +77,10 @@ class DailyFortuneResponse(BaseModel):
     mbti: Optional[str] = None  # MBTI (예: "INTJ")
 
     luck_scores: LuckScores
+    category_fortunes: Optional[CategoryFortunes] = None  # 카테고리별 상세 정보
     lucky_elements: LuckyElements
     messages: FortuneMessages
+    time_fortunes: Optional[TimeFortunes] = None  # 시간대별 운세
     rank_info: RankInfo
 
     class Config:

@@ -15,7 +15,11 @@ from app.schemas.fortune import (
     ZodiacStatsResponse,
     TrendingResponse,
     GenerateWithLuckyRequest,
-    ZodiacTodayFortuneResponse
+    ZodiacTodayFortuneResponse,
+    CategoryFortune,
+    CategoryFortunes,
+    TimeFortune,
+    TimeFortunes
 )
 from app.services.fortune_service import FortuneService
 from app.services.zodiac_service import ZodiacService
@@ -69,6 +73,10 @@ def get_daily_fortune(
     )
     logger.info(f"운세 조회 완료 - fortune_date: {fortune.fortune_date}, overall_luck: {fortune.overall_luck}")
 
+    # 확장된 점수 계산
+    scores = FortuneService.calculate_fortune_scores(str(current_user.id), today)
+    seed = FortuneService._generate_deterministic_seed(str(current_user.id), today)
+
     # 띠별 순위 계산
     logger.info("FortuneService.calculate_zodiac_rank 호출...")
     rank_info = FortuneService.calculate_zodiac_rank(
@@ -76,7 +84,68 @@ def get_daily_fortune(
         zodiac_sign=current_user.zodiac_sign,
         fortune_date=today
     )
+
+    # 최고 띠와 궁합 계산
+    best_zodiac, best_match = FortuneService.get_best_zodiac_and_match(today, current_user.zodiac_sign or "용띠")
+    rank_info["best_zodiac"] = best_zodiac
+    rank_info["best_match"] = best_match
     logger.info(f"순위 계산 완료 - rank_info: {rank_info}")
+
+    # 카테고리별 운세 상세 정보
+    category_fortunes = CategoryFortunes(
+        wealth=CategoryFortune(
+            score=scores['wealth'],
+            title="재물운",
+            description=FortuneService.get_category_message('wealth', scores['wealth'], seed)
+        ),
+        love=CategoryFortune(
+            score=scores['love'],
+            title="애정운",
+            description=FortuneService.get_category_message('love', scores['love'], seed)
+        ),
+        career=CategoryFortune(
+            score=scores['career'],
+            title="직장운",
+            description=FortuneService.get_category_message('career', scores['career'], seed)
+        ),
+        health=CategoryFortune(
+            score=scores['health'],
+            title="건강운",
+            description=FortuneService.get_category_message('health', scores['health'], seed)
+        ),
+        lottery=CategoryFortune(
+            score=scores['lottery'],
+            title="행운운",
+            description=FortuneService.get_category_message('lottery', scores['lottery'], seed)
+        )
+    )
+
+    # 시간대별 운세
+    time_fortune_data = FortuneService.get_time_fortunes(str(current_user.id), today, scores['overall'])
+    time_fortunes = TimeFortunes(
+        morning=TimeFortune(**time_fortune_data['morning']),
+        afternoon=TimeFortune(**time_fortune_data['afternoon']),
+        evening=TimeFortune(**time_fortune_data['evening'])
+    )
+
+    # 확장된 행운 요소
+    lucky_color = fortune.lucky_color
+    lucky_elements = {
+        "numbers": fortune.lucky_numbers,
+        "color": lucky_color,
+        "color_hex": FortuneService.get_color_hex(lucky_color),
+        "direction": fortune.lucky_direction,
+        "time": FortuneService.get_lucky_time(str(current_user.id), today),
+        "item": FortuneService.get_lucky_item(str(current_user.id), today, lucky_color)
+    }
+
+    # 확장된 메시지
+    messages = {
+        "fortune": fortune.fortune_message,
+        "advice": fortune.advice,
+        "warning": FortuneService.get_warning_message(scores['overall'], seed),
+        "summary": FortuneService.get_summary_message(scores)
+    }
 
     response = DailyFortuneResponse(
         user_id=str(current_user.id),
@@ -89,17 +158,15 @@ def get_daily_fortune(
         luck_scores={
             "overall": fortune.overall_luck,
             "wealth": fortune.wealth_luck,
-            "lottery": fortune.lottery_luck
+            "lottery": fortune.lottery_luck,
+            "love": scores['love'],
+            "career": scores['career'],
+            "health": scores['health']
         },
-        lucky_elements={
-            "numbers": fortune.lucky_numbers,
-            "color": fortune.lucky_color,
-            "direction": fortune.lucky_direction
-        },
-        messages={
-            "fortune": fortune.fortune_message,
-            "advice": fortune.advice
-        },
+        category_fortunes=category_fortunes,
+        lucky_elements=lucky_elements,
+        messages=messages,
+        time_fortunes=time_fortunes,
         rank_info=rank_info
     )
 
