@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import date, datetime
 from typing import List
+import logging
 
 from app.core.database import get_db
 from app.core.security import get_current_user
@@ -19,6 +20,8 @@ from app.schemas.fortune import (
 from app.services.fortune_service import FortuneService
 from app.services.zodiac_service import ZodiacService
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/fortune", tags=["운세"])
 
 
@@ -29,42 +32,53 @@ def get_daily_fortune(
 ):
     """
     오늘의 운세 조회
-    
+
     - 인증 필요
     - 생년월일 미등록 시 400 에러
     - 같은 날짜는 캐싱됨
     """
-    
+    logger.info("========== /fortune/daily 요청 시작 ==========")
+    logger.info(f"User ID: {current_user.id}, Email: {current_user.email}")
+    logger.info(f"birth_year: {current_user.birth_year}, zodiac_sign: {current_user.zodiac_sign}")
+    logger.info(f"fortune_enabled: {current_user.fortune_enabled}")
+
     if not current_user.birth_year:
+        logger.warning(f"생년월일 미등록 - User ID: {current_user.id}")
         raise HTTPException(
             status_code=400,
             detail="생년월일을 먼저 등록해주세요."
         )
-    
+
     if not current_user.fortune_enabled:
+        logger.warning(f"운세 기능 비활성화 - User ID: {current_user.id}")
         raise HTTPException(
             status_code=403,
             detail="운세 기능이 비활성화되어 있습니다."
         )
-    
+
     today = date.today()
-    
+    logger.info(f"오늘 날짜: {today}")
+
     # 운세 조회/생성
+    logger.info("FortuneService.get_or_create_daily_fortune 호출...")
     fortune = FortuneService.get_or_create_daily_fortune(
         db=db,
         user_id=str(current_user.id),
         birth_year=current_user.birth_year,
         fortune_date=today
     )
-    
+    logger.info(f"운세 조회 완료 - fortune_date: {fortune.fortune_date}, overall_luck: {fortune.overall_luck}")
+
     # 띠별 순위 계산
+    logger.info("FortuneService.calculate_zodiac_rank 호출...")
     rank_info = FortuneService.calculate_zodiac_rank(
         db=db,
         zodiac_sign=current_user.zodiac_sign,
         fortune_date=today
     )
-    
-    return DailyFortuneResponse(
+    logger.info(f"순위 계산 완료 - rank_info: {rank_info}")
+
+    response = DailyFortuneResponse(
         user_id=str(current_user.id),
         fortune_date=fortune.fortune_date,
         zodiac_sign=current_user.zodiac_sign,
@@ -85,6 +99,11 @@ def get_daily_fortune(
         },
         rank_info=rank_info
     )
+
+    logger.info(f"========== /fortune/daily 응답 완료 ==========")
+    logger.info(f"Response: luck_scores={response.luck_scores}, lucky_numbers={fortune.lucky_numbers}")
+
+    return response
 
 
 @router.get("/zodiac-stats", response_model=ZodiacStatsResponse)

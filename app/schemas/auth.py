@@ -9,6 +9,7 @@ class UserResponse(BaseModel):
     id: str
     provider: str
     nickname: Optional[str] = None
+    name: Optional[str] = None  # React Native용 (nickname alias)
     email: Optional[str] = None
     phone: Optional[str] = None
     profile_image_url: Optional[str] = None
@@ -19,11 +20,14 @@ class UserResponse(BaseModel):
     status: str
     birth_year: Optional[int] = None
     birth_date: Optional[date] = None
-    zodiac_sign: Optional[str] = None
+    zodiac_sign: Optional[str] = None  # 띠 (예: "용띠")
+    zodiac: Optional[str] = None  # React Native용 (zodiac_sign alias)
+    constellation: Optional[str] = None  # 별자리 (예: "사자자리")
+    mbti: Optional[str] = None  # MBTI (예: "INTJ")
     fortune_enabled: bool = True
     created_at: datetime
     last_login_at: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 

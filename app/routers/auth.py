@@ -472,6 +472,7 @@ async def get_current_user_info(
         birth_year=current_user.birth_year,
         birth_date=current_user.birth_date,
         zodiac_sign=current_user.zodiac_sign,
+        constellation=current_user.constellation,
         fortune_enabled=current_user.fortune_enabled,
         created_at=current_user.created_at,
         last_login_at=current_user.last_login_at
@@ -595,24 +596,25 @@ async def update_my_profile(
             try:
                 from datetime import datetime
                 from app.services.zodiac_service import ZodiacService
-                
+
                 # yyyy-mm-dd 형태를 파싱
                 birth_date_obj = datetime.strptime(birth_date_to_update.strip(), "%Y-%m-%d").date()
                 birth_year = birth_date_obj.year
-                
+
                 # 생년 범위 검증
                 if not (1900 <= birth_year <= 2100):
                     raise HTTPException(
                         status_code=400,
                         detail="생년월일은 1900년~2100년 사이여야 합니다"
                     )
-                
+
                 # 사용자 정보 업데이트
                 current_user.birth_date = birth_date_obj
                 current_user.birth_year = birth_year
                 current_user.zodiac_sign = ZodiacService.calculate_zodiac_sign(birth_year)
+                current_user.constellation = ZodiacService.calculate_constellation(birth_date_obj)
                 updated = True
-                
+
             except ValueError:
                 raise HTTPException(
                     status_code=400,
@@ -642,11 +644,12 @@ async def update_my_profile(
             status=current_user.status,
             birth_year=current_user.birth_year,
             zodiac_sign=current_user.zodiac_sign,
+            constellation=current_user.constellation,
             fortune_enabled=current_user.fortune_enabled,
             created_at=current_user.created_at,
             last_login_at=current_user.last_login_at
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -681,6 +684,7 @@ async def get_user_profile(
         birth_date=current_user.birth_date,
         zodiac_sign=current_user.zodiac_sign,
         zodiac=current_user.zodiac_sign,  # React Native에서 zodiac 필드 사용
+        constellation=current_user.constellation,
         mbti=None,  # MBTI 정보는 별도 API로 관리
         fortune_enabled=current_user.fortune_enabled,
         created_at=current_user.created_at,
@@ -741,11 +745,12 @@ async def update_profile(
             status=current_user.status,
             birth_year=current_user.birth_year,
             zodiac_sign=current_user.zodiac_sign,
+            constellation=current_user.constellation,
             fortune_enabled=current_user.fortune_enabled,
             created_at=current_user.created_at,
             last_login_at=current_user.last_login_at
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
