@@ -1,6 +1,9 @@
 import httpx
+import logging
 from datetime import date
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class OAuthService:
@@ -66,14 +69,21 @@ class OAuthService:
     @staticmethod
     async def get_google_token(code: str) -> dict:
         """구글 액세스 토큰 발급"""
+        logger.info("========== 구글 토큰 요청 시작 ==========")
+        logger.info(f"Authorization code (앞 20자): {code[:20]}..." if code and len(code) > 20 else f"Authorization code: {code}")
+
         # 테스트 계정용 mock 처리
         if code == "test_auth_code_lottolabs":
+            logger.info("테스트 계정 코드 감지 - mock 토큰 반환")
             return {
                 "access_token": "test_access_token_lottolabs",
                 "token_type": "Bearer",
                 "expires_in": 3600
             }
-        
+
+        logger.info(f"GOOGLE_CLIENT_ID: {settings.GOOGLE_CLIENT_ID[:20]}..." if settings.GOOGLE_CLIENT_ID else "GOOGLE_CLIENT_ID: None")
+        logger.info(f"GOOGLE_REDIRECT_URI: {settings.GOOGLE_REDIRECT_URI}")
+
         async with httpx.AsyncClient() as client:
             res = await client.post(
                 "https://oauth2.googleapis.com/token",
@@ -86,7 +96,14 @@ class OAuthService:
                 },
                 headers={"Content-Type": "application/x-www-form-urlencoded"}
             )
-            return res.json()
+            response_data = res.json()
+            logger.info(f"구글 토큰 응답 상태: {res.status_code}")
+            if "error" in response_data:
+                logger.error(f"구글 토큰 에러: {response_data.get('error')} - {response_data.get('error_description')}")
+            else:
+                logger.info("구글 토큰 발급 성공")
+            logger.info("========== 구글 토큰 요청 완료 ==========")
+            return response_data
     
     @staticmethod
     async def get_google_user(access_token: str) -> dict:

@@ -98,6 +98,10 @@ async def naver_login():
 @router.get("/google/login")
 async def google_login():
     """구글 로그인 페이지로 리다이렉트"""
+    logger.info("========== 구글 로그인 요청 시작 ==========")
+    logger.info(f"GOOGLE_CLIENT_ID: {settings.GOOGLE_CLIENT_ID[:20]}..." if settings.GOOGLE_CLIENT_ID else "GOOGLE_CLIENT_ID: None")
+    logger.info(f"GOOGLE_REDIRECT_URI: {settings.GOOGLE_REDIRECT_URI}")
+
     url = (
         f"https://accounts.google.com/o/oauth2/v2/auth"
         f"?client_id={settings.GOOGLE_CLIENT_ID}"
@@ -105,6 +109,8 @@ async def google_login():
         f"&response_type=code"
         f"&scope=email profile"
     )
+    logger.info(f"구글 OAuth URL 생성 완료: {url}")
+    logger.info("========== 구글 로그인 리다이렉트 ==========")
     return RedirectResponse(url)
 
 
