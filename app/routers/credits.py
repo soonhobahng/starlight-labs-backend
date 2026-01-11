@@ -28,10 +28,10 @@ async def get_credit_balance(
     current_user: User = Depends(get_current_user)
 ):
     """현재 크레딧 잔액 조회"""
-    
+
     return CreditBalance(
         current_balance=current_user.credits,
-        tier=current_user.tier.value,
+        tier=current_user.tier,
         unlimited=current_user.tier == UserTier.vip
     )
 
