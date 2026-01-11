@@ -75,19 +75,29 @@ class TestLoginRequest(BaseModel):
     password: str
 
 
+VALID_MBTI_TYPES = [
+    "INTJ", "INTP", "ENTJ", "ENTP",
+    "INFJ", "INFP", "ENFJ", "ENFP",
+    "ISTJ", "ISFJ", "ESTJ", "ESFJ",
+    "ISTP", "ISFP", "ESTP", "ESFP"
+]
+
+
 class UserProfile(BaseModel):
     nickname: Optional[str] = None
     phone: Optional[str] = None
     marketing_agreed: Optional[bool] = None
     birth_year: Optional[int] = Field(None, ge=1900, le=2100, description="출생년도")
+    birth_date: Optional[date] = Field(None, description="생년월일 (YYYY-MM-DD)")
+    mbti: Optional[str] = Field(None, description="MBTI (예: INTJ)")
     fortune_enabled: Optional[bool] = None
-    
+
     @validator('phone')
     def validate_phone(cls, v):
         if v and not re.match(r'^01[0-9]{8,9}$', v.replace('-', '').replace(' ', '')):
             raise ValueError('올바른 휴대폰 번호를 입력해주세요')
         return v
-    
+
     @validator('nickname')
     def validate_nickname(cls, v):
         if v is not None:
@@ -95,6 +105,14 @@ class UserProfile(BaseModel):
                 raise ValueError('닉네임은 2~50자 사이여야 합니다')
             if not re.match(r'^[가-힣a-zA-Z0-9_\s]+$', v):
                 raise ValueError('닉네임은 한글, 영문, 숫자, 밑줄, 공백만 사용 가능합니다')
+        return v
+
+    @validator('mbti')
+    def validate_mbti(cls, v):
+        if v is not None:
+            v = v.upper()
+            if v not in VALID_MBTI_TYPES:
+                raise ValueError(f'올바른 MBTI 유형을 입력해주세요 (예: INTJ, ENFP 등)')
         return v
 
 

@@ -66,6 +66,7 @@ class User(Base):
     # 운세 관련
     zodiac_sign = Column(String(10), nullable=True)  # 12띠 (예: "용띠")
     constellation = Column(String(10), nullable=True)  # 별자리 (예: "사자자리")
+    mbti = Column(String(4), nullable=True)  # MBTI (예: "INTJ")
     fortune_enabled = Column(Boolean, default=True, nullable=False)  # 운세 기능 활성화
     
     # 동의

@@ -473,6 +473,7 @@ async def get_current_user_info(
         birth_date=current_user.birth_date,
         zodiac_sign=current_user.zodiac_sign,
         constellation=current_user.constellation,
+        mbti=current_user.mbti,
         fortune_enabled=current_user.fortune_enabled,
         created_at=current_user.created_at,
         last_login_at=current_user.last_login_at
@@ -685,7 +686,7 @@ async def get_user_profile(
         zodiac_sign=current_user.zodiac_sign,
         zodiac=current_user.zodiac_sign,  # React Native에서 zodiac 필드 사용
         constellation=current_user.constellation,
-        mbti=None,  # MBTI 정보는 별도 API로 관리
+        mbti=current_user.mbti,
         fortune_enabled=current_user.fortune_enabled,
         created_at=current_user.created_at,
         last_login_at=current_user.last_login_at
@@ -720,17 +721,28 @@ async def update_profile(
         if profile_data.marketing_agreed is not None:
             current_user.marketing_agreed = profile_data.marketing_agreed
         
-        if profile_data.birth_year is not None:
+        if profile_data.birth_date is not None:
+            # birth_date가 있으면 birth_year, zodiac_sign, constellation 모두 계산
+            from app.services.zodiac_service import ZodiacService
+            current_user.birth_date = profile_data.birth_date
+            current_user.birth_year = profile_data.birth_date.year
+            current_user.zodiac_sign = ZodiacService.calculate_zodiac_sign(profile_data.birth_date.year)
+            current_user.constellation = ZodiacService.calculate_constellation(profile_data.birth_date)
+        elif profile_data.birth_year is not None:
+            # birth_year만 있으면 zodiac_sign만 계산 (constellation은 계산 불가)
             from app.services.zodiac_service import ZodiacService
             current_user.birth_year = profile_data.birth_year
             current_user.zodiac_sign = ZodiacService.calculate_zodiac_sign(profile_data.birth_year)
-        
+
+        if profile_data.mbti is not None:
+            current_user.mbti = profile_data.mbti.upper()
+
         if profile_data.fortune_enabled is not None:
             current_user.fortune_enabled = profile_data.fortune_enabled
-        
+
         db.commit()
         db.refresh(current_user)
-        
+
         return UserResponse(
             id=str(current_user.id),
             provider=current_user.provider,
@@ -746,6 +758,7 @@ async def update_profile(
             birth_year=current_user.birth_year,
             zodiac_sign=current_user.zodiac_sign,
             constellation=current_user.constellation,
+            mbti=current_user.mbti,
             fortune_enabled=current_user.fortune_enabled,
             created_at=current_user.created_at,
             last_login_at=current_user.last_login_at
